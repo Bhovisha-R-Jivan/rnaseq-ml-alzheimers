@@ -1,0 +1,15 @@
+# Raw sequencing data
+raw_data/
+data/
+
+# Generated analysis results
+analysis/
+
+# Large sequencing and alignment files
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.bam
+*.sam
+*.cram

@@ -21,9 +21,10 @@ mkdir -p "$project_folder"
 cd "$project_folder"
 
 # Create a subdirectory for the data to keep the project organised and separate from other files.
-mkdir -p "${project_folder}/data/raw"
+mkdir -p "${project_folder}/data/raw_data"
 
 # Activate your conda environment containing the necessary tools for downloading and processing the data.
+source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate rnaseq
 
 # There are 3 different ways in which FASTQ files can be downloaded.
@@ -76,12 +77,12 @@ conda activate rnaseq
     # Check that the output directory ('${project_folder}/data/raw/') exists, to ensure all downloaded files are in the same place for easier access and analysis. 
     # If you are using the --gzip option ensure it is compatible with downstream tools.
 
-iseq \
-    --gzip \
-    --fastq \
-    --input SRR32701816 \
-    --database sra \
-    --output "${project_folder}/data/raw/"
+#iseq \
+#    --gzip \
+#    --fastq \
+#    --input SRR32701816 \
+#    --database sra \
+#    --output "${project_folder}/data/raw/"
 
 # After downloading, assess read quality with FastQC.
 # Continue with adapter trimming, post-trimming QC, STAR alignment,

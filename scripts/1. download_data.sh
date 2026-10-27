@@ -14,11 +14,7 @@ desktop_path='/mnt/c/Users/Bhovisha/OneDrive/Desktop/'
 
 # Create a directory for the project if it doesn't exist to store all project related files.
 project_folder="${desktop_path}rnaseq-ml-alzheimers"
-mkdir -p "$project_folder"
 
-# Navigate to the created directory.
-# This can be easily done using the 'cd' command
-cd "$project_folder"
 
 # Create a subdirectory for the data to keep the project organised and separate from other files.
 mkdir -p "${project_folder}/data/raw_data"

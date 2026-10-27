@@ -44,7 +44,7 @@ conda activate rnaseq
 # fastq-dl is particularly useful for users who want a straightforward and versatile way to obtain FASTQ files as it supports both SRA, ERR and ENA accession numbers.
 # *Commands*:
     # fastq-dl
-    # --accession SRR8482616 : This is the accession number as displayed on the ENA website
+    # --accession SRR8482616 : This is the accession number as displayed on the NCBI SRA run selection accession list.
     # --outdir "${project_folder}/raw_data/" : By specifying the "--outdir" option, you can choose where to save the downloaded FASTQ files. 
 
 # while IFS= read -r accession || [[ -n "$accession" ]]; do
@@ -73,7 +73,7 @@ conda activate rnaseq
     # --fastq: Ensures the output file is FASTQ which is the standard for RNA-seq data.
     # --input SRR8482616: The relevant SRA accession number for the dataset to be downloaded.
     # --database sra: Indicates that the data should be retrieved from the SRA database.
-    # -- output "${project_folder}/raw_data/": Specifies the output directory for the downloaded files.
+    # --output "${project_folder}/raw_data/": Specifies the output directory for the downloaded files.
 #
 # Take note of the following before running the command:
     # iSeq needs to be installed in the rnaseq in order to work.
@@ -81,17 +81,17 @@ conda activate rnaseq
     # Check that the output directory ('${project_folder}/raw_data/') exists, to ensure all downloaded files are in the same place for easier access and analysis. 
     # If you are using the --gzip option ensure it is compatible with downstream tools.
 
-# while IFS= read -r accession || [[ -n "$accession" ]]; do
+while IFS= read -r accession || [[ -n "$accession" ]]; do
 
     # Download the current SRA run as a compressed FASTQ file.
-    # iseq \
-        # --gzip \
-        # --fastq \
-        # --input "$accession" \
-        # --database sra \
-        # --output "${project_folder}/raw_data"
+    iseq \
+        --gzip \
+        --fastq \
+        --input "$accession" \
+        --database sra \
+        --output "${project_folder}/raw_data"
 
-# done < "$ACCESSION_FILE"
+done < "$ACCESSION_FILE"
 
 # After downloading, assess read quality with FastQC.
 # Continue with adapter trimming, post-trimming QC, STAR alignment,

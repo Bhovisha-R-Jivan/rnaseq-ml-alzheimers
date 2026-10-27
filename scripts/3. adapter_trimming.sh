@@ -1,4 +1,4 @@
-```bash
+bash
 #!/bin/bash
 # Bash is the interpreter for this script.
 

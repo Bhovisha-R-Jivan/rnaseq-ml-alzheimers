@@ -28,16 +28,19 @@ conda activate rnaseq
 if [[ ! -f "$ANNOTATION_GTF" ]]; then
     echo "ERROR: GENCODE annotation file not found: $ANNOTATION_GTF"
     exit 1
+fi
 
 # Check that the accession list exists
 if [[ ! -f "$ACCESSION_FILE" ]]; then
     echo "ERROR: Accession list not found: $ACCESSION_FILE"
     exit 1
+fi
 
 # Check that Qualimap is installed
 if ! command -v qualimap >/dev/null 2>&1; then
     echo "ERROR: Qualimap is not installed in the rnaseq environment."
     exit 1
+fi
 
 # Run alignment quality control for each sample
 while IFS= read -r accession || [[ -n "$accession" ]]; do
@@ -55,6 +58,7 @@ while IFS= read -r accession || [[ -n "$accession" ]]; do
     if [[ ! -f "$BAM_FILE" ]]; then
         echo "ERROR: BAM file not found: $BAM_FILE"
         exit 1
+    fi
 
     # Create sample-specific output directory
     mkdir -p "$SAMPLE_QC_DIR"

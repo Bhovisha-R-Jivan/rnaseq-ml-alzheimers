@@ -18,7 +18,7 @@ COUNTS_TSV="${QUANT_DIR}/featurecounts.tsv"
 N_THREADS=2
 FEATURE="exon"
 ATTRIBUTE="gene_id"
-STRAND=0
+STRAND=0  # Provisional: unstranded counting
 
 # Create output directory
 mkdir -p "$QUANT_DIR"
@@ -30,6 +30,12 @@ conda activate rnaseq
 # Check that the annotation file exists
 if [[ ! -f "$ANNOTATION_GTF" ]]; then
     echo "ERROR: GENCODE annotation file not found: $ANNOTATION_GTF"
+    exit 1
+fi
+
+# Check that the BAM directory exists
+if [[ ! -d "$BAM_DIR" ]]; then
+    echo "ERROR: BAM directory not found: $BAM_DIR"
     exit 1
 fi
 
@@ -59,6 +65,12 @@ featureCounts \
     -a "$ANNOTATION_GTF" \
     -o "$COUNTS_FILE" \
     "${BAM_FILES[@]}"
+
+# Verify that featureCounts produced its output
+if [[ ! -s "$COUNTS_FILE" ]]; then
+    echo "ERROR: featureCounts output is missing or empty: $COUNTS_FILE"
+    exit 1
+fi
 
 # Remove comment lines and simplify sample column names
 awk '

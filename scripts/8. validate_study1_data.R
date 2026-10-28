@@ -226,11 +226,75 @@ missing_sex_rows <- which(metadata_missing$sex)
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                        8. Summarise the dataset
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Validate diagnosis labels
+
+expected_diagnoses <- c(
+  "Alzheimer's disease",
+  "control"
+)
+
+observed_diagnoses <- unique(
+  metadata$diagnosis[!is.na(metadata$diagnosis)]
+)
+
+unexpected_diagnoses <- setdiff(
+  observed_diagnoses,
+  expected_diagnoses
+)
+
+if (length(unexpected_diagnoses) > 0) {
+  stop(
+    "Unexpected diagnosis labels detected: ",
+    paste(unexpected_diagnoses, collapse = ", ")
+  )
+}
+
+if (anyNA(metadata$diagnosis)) {
+  stop("Missing diagnosis labels detected.")
+}
+
 
 diagnosis_counts <- table(
   metadata$diagnosis,
   useNA = "ifany"
 )
+
+# Summarise age and sex by diagnosis
+
+age_by_diagnosis <- aggregate(
+  age_numeric,
+  by = list(diagnosis = metadata$diagnosis),
+  FUN = function(x) {
+    c(
+      n = sum(!is.na(x)),
+      mean = mean(x, na.rm = TRUE),
+      median = median(x, na.rm = TRUE),
+      sd = sd(x, na.rm = TRUE)
+    )
+  }
+)
+
+sex_by_diagnosis <- table(
+  metadata$diagnosis,
+  metadata$sex,
+  useNA = "ifany"
+)
+
+# Identify samples with missing or placeholder age or sex
+
+samples_missing_demographics <- data.frame(
+  sample_id = metadata[["GEO_Accession (exp)"]],
+  diagnosis = metadata$diagnosis,
+  age_missing = metadata_missing$AGE,
+  sex_missing = metadata_missing$sex
+)
+
+samples_missing_demographics <- samples_missing_demographics[
+  samples_missing_demographics$age_missing |
+    samples_missing_demographics$sex_missing,
+  ,
+  drop = FALSE
+]
 
 report_lines <- c(
   "STUDY 1 DATA VALIDATION REPORT",
@@ -260,6 +324,18 @@ report_lines <- c(
   "----------------",
   capture.output(print(diagnosis_counts)),
   "",
+  "",
+"SEX BY DIAGNOSIS",
+"----------------",
+capture.output(print(sex_by_diagnosis)),
+"",
+"AGE SUMMARY BY DIAGNOSIS",
+"------------------------",
+capture.output(print(age_by_diagnosis)),
+"",
+"SAMPLES WITH MISSING DEMOGRAPHICS",
+"---------------------------------",
+capture.output(print(samples_missing_demographics)),
   "MISSING METADATA VALUES",
   "-----------------------",
   capture.output(print(missing_counts)),

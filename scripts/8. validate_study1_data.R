@@ -325,6 +325,7 @@ report_lines <- c(
   capture.output(print(diagnosis_counts)),
   "",
   "",
+  "",
 "SEX BY DIAGNOSIS",
 "----------------",
 capture.output(print(sex_by_diagnosis)),

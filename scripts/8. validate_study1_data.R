@@ -178,8 +178,53 @@ stopifnot(
   )
 )
 
+# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#                                                   7. Identify missing and placeholder metadata values
+# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Treat blank strings and known placeholder values as missing
+# for validation purposes. Preserve the original metadata values.
+
+missing_placeholders <- c(
+  "",
+  "NA",
+  "N/A",
+  "not applicable",
+  "not available",
+  "unknown"
+)
+
+metadata_missing <- as.data.frame(
+  lapply(metadata, function(column) {
+    if (is.character(column)) {
+      tolower(trimws(column)) %in%
+        tolower(missing_placeholders) |
+        is.na(column)
+    } else {
+      is.na(column)
+    }
+  }),
+  check.names = FALSE
+)
+
+missing_counts <- colSums(metadata_missing)
+
+# Inspect age values that cannot be interpreted as numbers.
+age_numeric <- suppressWarnings(
+  as.numeric(metadata$AGE)
+)
+
+invalid_age <- !metadata_missing$AGE &
+  (is.na(age_numeric) | !is.finite(age_numeric))
+
+# Summarise missingness and invalid age values.
+missing_age_rows <- which(metadata_missing$AGE)
+invalid_age_rows <- which(invalid_age)
+
+missing_sex_rows <- which(metadata_missing$sex)
+
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#                                                        7. Summarise the dataset
+#                                                        8. Summarise the dataset
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 diagnosis_counts <- table(
@@ -217,19 +262,13 @@ report_lines <- c(
   "",
   "MISSING METADATA VALUES",
   "-----------------------",
-  paste(
-    capture.output(
-      print(colSums(is.na(metadata)))
-    ),
-    collapse = "\n"
-  ),
+  capture.output(print(missing_counts)),
   "",
-  "OVERALL RESULT: PASS",
-  "",
-  "Note: Passing these checks confirms structural consistency",
-  "and count-value formatting. It does not establish that the",
-  "experimental design or statistical assumptions are valid."
-)
+  "AGE VALIDATION",
+  "--------------",
+  paste("Missing or placeholder age values:", length(missing_age_rows)),
+  paste("Non-numeric or non-finite age values:", length(invalid_age_rows)),
+  paste("Missing or placeholder sex values:", length(missing_sex_rows)),
 
 writeLines(report_lines, report_file)
 

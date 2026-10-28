@@ -28,16 +28,19 @@ if [[ ! -f "$GENOME_FASTA" ]]; then
     echo "ERROR: Reference genome FASTA not found: $GENOME_FASTA"
     echo "Obtain the GRCh38 primary assembly FASTA before running this script."
     exit 1
+fi
 
 if [[ ! -f "$ANNOTATION_GTF" ]]; then
     echo "ERROR: GENCODE annotation GTF not found: $ANNOTATION_GTF"
     echo "Obtain the GENCODE v47 primary assembly GTF before running this script."
     exit 1
+fi
 
 # Check that STAR is installed
 if ! command -v STAR >/dev/null 2>&1; then
     echo "ERROR: STAR is not installed in the rnaseq environment."
     exit 1
+fi
 
 # Build the STAR genome index
 STAR \
@@ -47,5 +50,3 @@ STAR \
     --genomeFastaFiles "$GENOME_FASTA" \
     --sjdbGTFfile "$ANNOTATION_GTF" \
     --sjdbOverhang "$SJDB_OVERHANG"
-
-echo "STAR genome indexing completed successfully."

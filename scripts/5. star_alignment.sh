@@ -29,25 +29,30 @@ if [[ ! -f "${STAR_INDEX_DIR}/Genome" ]]; then
     echo "ERROR: STAR genome index not found in ${STAR_INDEX_DIR}"
     echo "Build the STAR index before running alignment."
     exit 1
+fi
 
 # Check that the reference genome exists
 if [[ ! -f "$GENOME_FASTA" ]]; then
     echo "ERROR: Reference genome FASTA not found: $GENOME_FASTA"
     exit 1
+fi
 
 # Check that the accession list exists
 if [[ ! -f "$ACCESSION_FILE" ]]; then
     echo "ERROR: Accession list not found: $ACCESSION_FILE"
     exit 1
+fi
 
 # Check that STAR and SAMtools are installed
 if ! command -v STAR >/dev/null 2>&1; then
     echo "ERROR: STAR is not installed in the rnaseq environment."
     exit 1
+fi
 
 if ! command -v samtools >/dev/null 2>&1; then
     echo "ERROR: SAMtools is not installed in the rnaseq environment."
     exit 1
+fi
 
 # Align single-end, quality-controlled reads using STAR
 while IFS= read -r accession || [[ -n "$accession" ]]; do
@@ -68,6 +73,7 @@ while IFS= read -r accession || [[ -n "$accession" ]]; do
     if [[ ! -f "$INPUT_FASTQ" ]]; then
         echo "ERROR: Trimmed FASTQ file not found: $INPUT_FASTQ"
         exit 1
+    fi
 
     echo "Aligning sample: ${accession}"
 

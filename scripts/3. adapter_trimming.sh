@@ -18,14 +18,40 @@ mkdir -p "$POSTQC_DIR"
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate rnaseq
 
+# Check that required tools are installed.
+if ! command -v trim_galore >/dev/null 2>&1; then
+    echo "ERROR: Trim Galore is not installed in the rnaseq environment."
+    exit 1
+fi
+
+if ! command -v fastqc >/dev/null 2>&1; then
+    echo "ERROR: FastQC is not installed in the rnaseq environment."
+    exit 1
+fi
+
+# Check that the accession list exists.
+if [[ ! -f "$ACCESSION_FILE" ]]; then
+    echo "ERROR: Accession list not found: $ACCESSION_FILE"
+    exit 1
+fi
+
 # Set the number of CPU cores for processing.
 N_THREADS=2
 
 # Loop through the SRA run accessions in the accession list.
 while IFS= read -r accession || [[ -n "$accession" ]]; do
 
-    # Define the input FASTQ file for the current single-end run.
-    INPUT_FASTQ="${raw_data}/${accession}.fastq.gz"
+    # Skip blank lines.
+    [[ -z "$accession" ]] && continue
+
+    # Define the input FASTQ file produced by iSeq.
+    INPUT_FASTQ="${raw_data}/${accession}_1.fastq.gz"
+
+    # Check that the input file exists.
+    if [[ ! -f "$INPUT_FASTQ" ]]; then
+        echo "ERROR: FASTQ file not found: $INPUT_FASTQ"
+        exit 1
+    fi
 
     # Trim adapters and low-quality bases, then assess the trimmed reads with FastQC.
     trim_galore \
@@ -40,3 +66,5 @@ while IFS= read -r accession || [[ -n "$accession" ]]; do
         "$INPUT_FASTQ"
 
 done < "$ACCESSION_FILE"
+
+echo "Adapter trimming completed successfully."

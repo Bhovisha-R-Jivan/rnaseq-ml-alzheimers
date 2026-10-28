@@ -69,3 +69,19 @@ Validation steps should be implemented in version-controlled scripts.
 Input data and generated results are excluded from Git by the repository's
 current ignore rules. Data sources, software versions, analysis decisions,
 and execution instructions should be documented separately.
+
+### Script Paths
+scripts/8. validate_study1_data.R
+
+analysis/study1/data_validation_report.txt
+
+- The validation script imports the combined count matrix and semicolon-delimited metadata.
+- The matrix contains 39,376 gene rows and 289 samples.
+- All gene identifiers and sample identifiers are unique.
+- All count values passed the checks for non-negative integer formatting.
+- All 289 sample identifiers match between the count matrix and metadata.
+- The dataset contains 219 Alzheimer's disease samples and 70 controls.
+- One Alzheimer's disease sample, GSM3577605, has missing age and sex information.
+- The mean age is 83.38 years for the Alzheimer's disease group and 87.00 years for controls, calculated from samples with recorded ages.
+- The sex distribution is 97 female, 121 male and one missing for Alzheimer's disease, compared with 33 female and 37 male controls.
+- These checks establish structural consistency, but further assessment of the experimental design is required before differential expression analysis.

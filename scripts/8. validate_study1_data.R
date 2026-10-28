@@ -268,7 +268,7 @@ report_lines <- c(
   "--------------",
   paste("Missing or placeholder age values:", length(missing_age_rows)),
   paste("Non-numeric or non-finite age values:", length(invalid_age_rows)),
-  paste("Missing or placeholder sex values:", length(missing_sex_rows)),
+  paste("Missing or placeholder sex values:", length(missing_sex_rows))
 )
 
 writeLines(report_lines, report_file)

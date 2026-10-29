@@ -353,6 +353,73 @@ dds <- DESeqDataSetFromMatrix(
 
 dds <- DESeq(dds)
 
+# ============================================================
+# DIAGNOSTIC: Investigate missing DESeq2 p-values
+# ============================================================
+
+# Original results using DESeq2 defaults
+res_default <- results(
+  dds,
+  contrast = c("diagnosis", "Alzheimer's disease", "control"),
+  alpha = 0.05
+)
+
+# Results without Cook's-distance filtering or independent filtering
+res_unfiltered <- results(
+  dds,
+  contrast = c("diagnosis", "Alzheimer's disease", "control"),
+  alpha = 0.05,
+  cooksCutoff = FALSE,
+  independentFiltering = FALSE
+)
+
+# Identify genes with missing raw p-values in the original results
+missing_pvalue <- is.na(res_default$pvalue)
+
+diagnostic_results <- data.frame(
+  GeneID = rownames(res_default),
+  baseMean = res_default$baseMean,
+  log2FoldChange = res_default$log2FoldChange,
+  stat = res_default$stat,
+  original_pvalue = res_default$pvalue,
+  unfiltered_pvalue = res_unfiltered$pvalue,
+  original_padj = res_default$padj,
+  maxCooks = mcols(dds)$maxCooks,
+  missing_original_pvalue = missing_pvalue
+)
+
+# Keep only genes with missing original raw p-values
+missing_pvalue_genes <- diagnostic_results[
+  diagnostic_results$missing_original_pvalue,
+]
+
+# Save the diagnostic separately from the original results
+write.csv(
+  missing_pvalue_genes,
+  "analysis/study1/study1_missing_pvalues_diagnostic.csv",
+  row.names = FALSE
+)
+
+# Summarise what happened
+cat("\n--- Missing p-value diagnostic ---\n")
+cat("Genes tested:", nrow(res_default), "\n")
+cat("Missing original p-values:", sum(is.na(res_default$pvalue)), "\n")
+cat(
+  "Missing p-values restored without Cook's filtering:",
+  sum(
+    is.na(res_default$pvalue) &
+    !is.na(res_unfiltered$pvalue)
+  ),
+  "\n"
+)
+cat(
+  "Missing adjusted p-values:",
+  sum(is.na(res_default$padj)),
+  "\n"
+)
+
+print(missing_pvalue_genes)
+
 # -------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                      9. Extract Alzheimer's disease versus control results
 # -------------------------------------------------------------------------------------------------------------------------------------------------

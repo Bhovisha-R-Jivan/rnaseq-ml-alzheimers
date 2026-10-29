@@ -1,11 +1,14 @@
 # Raw sequencing data
+
 raw_data/
 data/
 
 # Generated analysis results
+
 analysis/
 
 # Large sequencing and alignment files
+
 *.fastq
 *.fastq.gz
 *.fq
@@ -13,3 +16,22 @@ analysis/
 *.bam
 *.sam
 *.cram
+*.bai
+*.crai
+
+# Python temporary files
+
+**pycache**/
+*.py[cod]
+
+# R session files
+
+.Rhistory
+.RData
+.Rproj.user/
+
+# Temporary files
+
+*.tmp
+*.temp
+*~

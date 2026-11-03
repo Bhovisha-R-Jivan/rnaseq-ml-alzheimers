@@ -32,15 +32,14 @@ if ! command -v fasterq-dump >/dev/null 2>&1; then
     exit 1
 fi
 
-# Check whether the accession list exists.
-if [[ ! -f "$ACCESSION_FILE" ]]; then
-    echo "Error: Accession list not found."
+# Check whether the accession list exists and is not empty.
+if [[ ! -s "$ACCESSION_FILE" ]]; then
+    echo "Error: Accession list is missing or empty."
     exit 1
 fi
 
 # Download SRA files for each run accession listed in the accession file.
-
-while IFS= read -r accession; do
+while IFS= read -r accession || [[ -n "$accession" ]]; do
     # Skip empty lines.
     [[ -z "$accession" ]] && continue
 
@@ -54,14 +53,21 @@ done < "$ACCESSION_FILE"
 
 echo "SRA downloads completed."
 
-# fasterq-dump can use a susbtantial amount of temporary disk space, and by creating a temporary directory it becomes eaiser to monitor.
-
+# fasterq-dump can use a substantial amount of temporary disk space.
+# Creating a dedicated temporary directory makes it easier to monitor.
 TEMP_DIR="${project_folder}/analysis/tmp"
 mkdir -p "$TEMP_DIR"
 
 # Convert downloaded SRA files into FASTQ files.
-while IFS= read -r accession; do
+while IFS= read -r accession || [[ -n "$accession" ]]; do
+    # Skip empty lines.
     [[ -z "$accession" ]] && continue
+
+    # Check whether the downloaded SRA file exists.
+    if [[ ! -f "${RAW_DATA_DIR}/${accession}/${accession}.sra" ]]; then
+        echo "Error: SRA file for ${accession} not found."
+        exit 1
+    fi
 
     echo "Converting ${accession} into FASTQ..."
 
@@ -75,7 +81,17 @@ while IFS= read -r accession; do
 done < "$ACCESSION_FILE"
 
 # Compress the generated FASTQ files using gzip.
-gzip "$RAW_DATA_DIR"/*.fastq
+shopt -s nullglob
+fastq_files=("$RAW_DATA_DIR"/*.fastq)
+
+if (( ${#fastq_files[@]} > 0 )); then
+    gzip "${fastq_files[@]}"
+else
+    echo "Error: No FASTQ files found for compression."
+    exit 1
+fi
+
+echo "SRA downloads, FASTQ conversion and compression completed."
 
 # After downloading, assess read quality with FastQC.
 # Continue with adapter trimming, post-trimming QC, STAR alignment,

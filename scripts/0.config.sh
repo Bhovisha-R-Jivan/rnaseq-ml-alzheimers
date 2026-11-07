@@ -12,14 +12,16 @@
 # ===========================================================================================================================================================================
 # Main project directory.
 
-# This is the OneDrive Desktop location accessed through WSL.
-RAW_DATA_DIR="${RAW_DATA_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/Test_data/raw_data}"
+# Main project directory.
+PROJECT_DIR="${PROJECT_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/rnaseq-ml-alzheimers}"
 
+# Input FASTQ directory (temporarily using Dr Jibin's test data).
+RAW_DATA_DIR="${RAW_DATA_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/Test_data/raw_data}"
+TEST_DIR="/mnt/c/Users/Bhovisha/OneDrive/Desktop/Test_data"
 # Main project directories.
-RAW_DATA_DIR="${PROJECT_DIR}/raw_data"
 REFERENCE_DIR="${PROJECT_DIR}/reference"
 SCRIPTS_DIR="${PROJECT_DIR}/scripts"
-ANALYSIS_DIR="${PROJECT_DIR}/analysis"
+ANALYSIS_DIR="${TEST_DIR}/analysis"
 
 # STAR genome index directory.
 STAR_INDEX_DIR="${REFERENCE_DIR}/star_index"

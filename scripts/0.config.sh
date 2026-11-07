@@ -30,6 +30,12 @@ STAR_INDEX_DIR="${REFERENCE_DIR}/star_index"
 # Text file containing individual SRA run accession IDs.
 ACCESSION_FILE="${PROJECT_DIR}/accession_ids.txt"
 
+# Data acquisition method:
+# "sra"   = Download SRA accessions using iSeq.
+# "local" = Use FASTQ files already present in raw_data/.
+
+DATA_SOURCE="local"
+
 # ===========================================================================================================================================================================
 # 3. INPUT DATA SETTINGS
 # ===========================================================================================================================================================================

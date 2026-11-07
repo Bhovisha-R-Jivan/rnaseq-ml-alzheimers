@@ -19,7 +19,7 @@ PROJECT_DIR="${PROJECT_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/rnaseq-ml-alz
 RAW_DATA_DIR="${RAW_DATA_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/Test_data/raw_data}"
 TEST_DIR="/mnt/c/Users/Bhovisha/OneDrive/Desktop/Test_data"
 # Main project directories.
-REFERENCE_DIR="${PROJECT_DIR}/reference"
+REFERENCE_DIR="${TEST_DIR}/resource_folder"
 SCRIPTS_DIR="${PROJECT_DIR}/scripts"
 ANALYSIS_DIR="${TEST_DIR}/analysis"
 

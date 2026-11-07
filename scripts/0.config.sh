@@ -59,8 +59,8 @@ R2_SUFFIX="_2.fastq.gz"
 # ===========================================================================================================================================================================
 # User-supplied reference genome and matching annotation.
 # Both files must correspond to the same organism and genome assembly.
-GENOME="${REFERENCE_DIR}/genome.fa"
-ANNOTATION="${REFERENCE_DIR}/annotation.gtf"
+GENOME="${REFERENCE_DIR}/GRCh38_chrX_primary_assembly.genome.fa"
+ANNOTATION="${REFERENCE_DIR}/GRCh38_chrX_gencode.v47.annotation.gtf"
 
 # ============================================================================================================================================================================
 # 5. COMPUTATIONAL RESOURCES

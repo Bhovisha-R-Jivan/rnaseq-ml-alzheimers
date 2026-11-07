@@ -13,7 +13,7 @@
 # Main project directory.
 
 # This is the OneDrive Desktop location accessed through WSL.
-PROJECT_DIR="${PROJECT_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/rnaseq-ml-alzheimers}"
+RAW_DATA_DIR="${RAW_DATA_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/Test_data/raw_data}"
 
 # Main project directories.
 RAW_DATA_DIR="${PROJECT_DIR}/raw_data"

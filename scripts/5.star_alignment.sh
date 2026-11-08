@@ -152,6 +152,7 @@ elif [[ "${READ_TYPE}" == "single" ]]; then
             --readFilesCommand zcat \
             --outSAMunmapped Within \
             --outSAMtype BAM SortedByCoordinate \
+            --outTmpDir "/tmp/${SAMPLE_NAME}_STARtmp"
             --outFileNamePrefix "${OUT_PREFIX}"
 
         # Verify BAM generation.

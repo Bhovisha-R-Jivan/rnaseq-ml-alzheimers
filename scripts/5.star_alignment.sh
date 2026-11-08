@@ -91,13 +91,14 @@ if [[ "${READ_TYPE}" == "paired" ]]; then
 
         # Align paired-end reads and generate coordinate-sorted BAM.
         STAR \
-            --runThreadN "${THREADS}" \
-            --genomeDir "${STAR_INDEX_DIR}" \
-            --readFilesIn "${R1}" "${R2}" \
-            --readFilesCommand zcat \
-            --outSAMunmapped Within \
-            --outSAMtype BAM SortedByCoordinate \
-            --outFileNamePrefix "${OUT_PREFIX}"
+             --runThreadN "${THREADS}" \
+             --genomeDir "${STAR_INDEX_DIR}" \
+             --readFilesIn "${R1}" "${R2}" \
+             --readFilesCommand zcat \
+             --outSAMunmapped Within \
+             --outSAMtype BAM SortedByCoordinate \
+             --outTmpDir "/tmp/${SAMPLE_NAME}_STARtmp" \
+             --outFileNamePrefix "${OUT_PREFIX}"
 
         # Verify BAM generation.
         if [[ ! -s "${SORTED_BAM}" ]]; then
@@ -152,8 +153,8 @@ elif [[ "${READ_TYPE}" == "single" ]]; then
             --readFilesCommand zcat \
             --outSAMunmapped Within \
             --outSAMtype BAM SortedByCoordinate \
-            --outTmpDir "/tmp/${SAMPLE_NAME}_STARtmp"
-            --outFileNamePrefix "${OUT_PREFIX}"
+            --outTmpDir "/tmp/${SAMPLE_NAME}_STARtmp" \
+            --outFileNamePrefix "${OUT_PREFIX}"       
 
         # Verify BAM generation.
         if [[ ! -s "${SORTED_BAM}" ]]; then

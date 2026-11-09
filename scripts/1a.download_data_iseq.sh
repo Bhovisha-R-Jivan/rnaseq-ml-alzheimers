@@ -12,6 +12,7 @@ source scripts/0.config.sh
 # Create raw data directory if it does not exist.
 mkdir -p "${RAW_DATA_DIR}"
 
+
 # ---------------------------------------------------------------------
 # 1. LOCAL FASTQ INPUT
 # ---------------------------------------------------------------------
@@ -29,6 +30,7 @@ if [[ "${DATA_SOURCE}" == "local" ]]; then
 
     echo "Local FASTQ files detected."
     echo "No download required."
+
 
 # ---------------------------------------------------------------------
 # 2. SRA ACCESSION DOWNLOAD
@@ -48,6 +50,11 @@ elif [[ "${DATA_SOURCE}" == "sra" ]]; then
     fi
 
     # Activate Conda environment.
+    if [[ ! -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+        echo "ERROR: Conda initialization script not found."
+        exit 1
+    fi
+
     source "$HOME/miniconda3/etc/profile.d/conda.sh"
     conda activate rnaseq
 
@@ -89,11 +96,68 @@ else
 
 fi
 
+
 # ---------------------------------------------------------------------
 # 3. FINAL INPUT CHECK
+# ---------------------------------------------------------------------
+
+echo "Checking FASTQ input files..."
+
+# Check that gzipped FASTQ files were produced or detected.
+if ! compgen -G "${RAW_DATA_DIR}/*.fastq.gz" > /dev/null; then
+    echo "ERROR: No .fastq.gz files found after data acquisition."
+    exit 1
+fi
+
+# Validate paired-end FASTQ files.
+if [[ "${READ_TYPE}" == "paired" ]]; then
+
+    shopt -s nullglob
+
+    R1_FILES=("${RAW_DATA_DIR}"/*"${R1_SUFFIX}")
+    R2_FILES=("${RAW_DATA_DIR}"/*"${R2_SUFFIX}")
+
+    shopt -u nullglob
+
+    if [[ ${#R1_FILES[@]} -eq 0 || ${#R2_FILES[@]} -eq 0 ]]; then
+        echo "ERROR: Paired-end FASTQ files are incomplete."
+        echo "R1 files found: ${#R1_FILES[@]}"
+        echo "R2 files found: ${#R2_FILES[@]}"
+        exit 1
+    fi
+
+    # Check that each R1 file has a corresponding R2 file.
+    for R1_FILE in "${R1_FILES[@]}"; do
+
+        SAMPLE_NAME="${R1_FILE%"${R1_SUFFIX}"}"
+        R2_FILE="${SAMPLE_NAME}${R2_SUFFIX}"
+
+        if [[ ! -f "${R2_FILE}" ]]; then
+            echo "ERROR: Missing R2 file for ${R1_FILE}"
+            exit 1
+        fi
+
+    done
+
+    # Check that R1 and R2 file counts match.
+    if [[ ${#R1_FILES[@]} -ne ${#R2_FILES[@]} ]]; then
+        echo "ERROR: R1 and R2 file counts do not match."
+        exit 1
+    fi
+
+    echo "Paired-end FASTQ files validated."
+    echo "R1 files: ${#R1_FILES[@]}"
+    echo "R2 files: ${#R2_FILES[@]}"
+
+fi
+
+
+# ---------------------------------------------------------------------
+# 4. COMPLETION
 # ---------------------------------------------------------------------
 
 echo "============================================"
 echo "DATA ACQUISITION COMPLETE"
 echo "FASTQ directory: ${RAW_DATA_DIR}"
+echo "Read type: ${READ_TYPE}"
 echo "============================================"

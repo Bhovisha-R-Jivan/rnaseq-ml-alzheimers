@@ -12,21 +12,37 @@ source scripts/0.config.sh
 # Define output directories.
 TRIMMED_DIR="${ANALYSIS_DIR}/2_trimmed"
 POSTQC_DIR="${ANALYSIS_DIR}/3_postqc_fastqc"
+POSTMULTIQC_DIR="${ANALYSIS_DIR}/3_postqc_multiqc"
 
 # Create output directories.
-mkdir -p "${TRIMMED_DIR}" "${POSTQC_DIR}"
+mkdir -p "${TRIMMED_DIR}" "${POSTQC_DIR}" "${POSTMULTIQC_DIR}"
+
+
+# ---------------------------------------------------------------------
+# 1. ACTIVATE CONDA ENVIRONMENT
+# ---------------------------------------------------------------------
 
 # Activate Conda environment.
+if [[ ! -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+    echo "ERROR: Conda initialization script not found."
+    exit 1
+fi
+
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate rnaseq
 
 # Check that required tools are installed.
-for TOOL in trim_galore fastqc; do
+for TOOL in trim_galore fastqc multiqc; do
     if ! command -v "${TOOL}" > /dev/null 2>&1; then
         echo "ERROR: ${TOOL} is not installed or unavailable."
         exit 1
     fi
 done
+
+
+# ---------------------------------------------------------------------
+# 2. CHECK INPUT DATA
+# ---------------------------------------------------------------------
 
 # Check that the raw data directory exists.
 if [[ ! -d "${RAW_DATA_DIR}" ]]; then
@@ -37,8 +53,9 @@ fi
 # Enable nullglob to handle missing file patterns.
 shopt -s nullglob
 
+
 # =====================================================================
-# 1. PAIRED-END DATA
+# 3. PAIRED-END DATA
 # =====================================================================
 
 if [[ "${READ_TYPE}" == "paired" ]]; then
@@ -46,8 +63,8 @@ if [[ "${READ_TYPE}" == "paired" ]]; then
     echo "Starting paired-end adapter trimming."
 
     # Identify forward and reverse FASTQ files.
-    R1_FILES=( "${RAW_DATA_DIR}"/*"${R1_SUFFIX}" )
-    R2_FILES=( "${RAW_DATA_DIR}"/*"${R2_SUFFIX}" )
+    R1_FILES=("${RAW_DATA_DIR}"/*"${R1_SUFFIX}")
+    R2_FILES=("${RAW_DATA_DIR}"/*"${R2_SUFFIX}")
 
     # Check that both read sets exist.
     if [[ ${#R1_FILES[@]} -eq 0 || ${#R2_FILES[@]} -eq 0 ]]; then
@@ -93,7 +110,7 @@ if [[ "${READ_TYPE}" == "paired" ]]; then
 
 
 # =====================================================================
-# 2. SINGLE-END DATA
+# 4. SINGLE-END DATA
 # =====================================================================
 
 elif [[ "${READ_TYPE}" == "single" ]]; then
@@ -101,7 +118,7 @@ elif [[ "${READ_TYPE}" == "single" ]]; then
     echo "Starting single-end adapter trimming."
 
     # Identify single-end FASTQ files.
-    FASTQ_FILES=( "${RAW_DATA_DIR}"/*.fastq.gz )
+    FASTQ_FILES=("${RAW_DATA_DIR}"/*.fastq.gz)
 
     # Check that FASTQ files exist.
     if [[ ${#FASTQ_FILES[@]} -eq 0 ]]; then
@@ -136,10 +153,10 @@ fi
 
 
 # =====================================================================
-# 3. POST-TRIMMING QUALITY ASSESSMENT
+# 5. POST-TRIMMING FASTQ CHECK
 # =====================================================================
 
-echo "Starting post-trimming FastQC."
+echo "Checking trimmed FASTQ files..."
 
 # Identify trimmed FASTQ files.
 TRIMMED_FILES=(
@@ -153,6 +170,15 @@ if [[ ${#TRIMMED_FILES[@]} -eq 0 ]]; then
     exit 1
 fi
 
+echo "Trimmed FASTQ files detected: ${#TRIMMED_FILES[@]}"
+
+
+# =====================================================================
+# 6. POST-TRIMMING QUALITY ASSESSMENT
+# =====================================================================
+
+echo "Starting post-trimming FastQC."
+
 # Run FastQC on trimmed reads.
 fastqc \
     --outdir "${POSTQC_DIR}" \
@@ -161,12 +187,31 @@ fastqc \
 
 
 # =====================================================================
-# 4. COMPLETION
+# 7. POST-TRIMMING MULTIQC REPORT
+# =====================================================================
+
+echo "Generating post-trimming MultiQC report..."
+
+# Summarise post-trimming FastQC results.
+multiqc \
+    "${POSTQC_DIR}" \
+    --outdir "${POSTMULTIQC_DIR}" \
+    --force
+
+echo "Post-trimming MultiQC report generated."
+
+shopt -u nullglob
+
+
+# =====================================================================
+# 8. COMPLETION
 # =====================================================================
 
 echo "============================================================"
 echo "ADAPTER TRIMMING COMPLETED"
 echo "POST-TRIMMING FASTQC COMPLETED"
+echo "POST-TRIMMING MULTIQC COMPLETED"
 echo "Trimmed FASTQ files: ${TRIMMED_DIR}"
 echo "FastQC reports: ${POSTQC_DIR}"
+echo "MultiQC report: ${POSTMULTIQC_DIR}"
 echo "============================================================"

@@ -9,13 +9,25 @@ set -euo pipefail
 # Load pipeline configuration.
 source scripts/0.config.sh
 
-# Define FastQC output directory.
+# Define FastQC and MultiQC output directories.
 QC_DIR="${ANALYSIS_DIR}/1_fastqc"
+MULTIQC_DIR="${QC_DIR}/multiqc_report"
 
-# Create output directory.
+# Create output directories.
 mkdir -p "${QC_DIR}"
+mkdir -p "${MULTIQC_DIR}"
+
+
+# ---------------------------------------------------------------------
+# 1. ACTIVATE CONDA ENVIRONMENT
+# ---------------------------------------------------------------------
 
 # Activate Conda environment.
+if [[ ! -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+    echo "ERROR: Conda initialization script not found."
+    exit 1
+fi
+
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate rnaseq
 
@@ -24,6 +36,17 @@ if ! command -v fastqc > /dev/null 2>&1; then
     echo "ERROR: FastQC is not installed or unavailable."
     exit 1
 fi
+
+# Check that MultiQC is installed.
+if ! command -v multiqc > /dev/null 2>&1; then
+    echo "ERROR: MultiQC is not installed or unavailable."
+    exit 1
+fi
+
+
+# ---------------------------------------------------------------------
+# 2. CHECK INPUT DATA
+# ---------------------------------------------------------------------
 
 # Check that raw data directory exists.
 if [[ ! -d "${RAW_DATA_DIR}" ]]; then
@@ -34,8 +57,9 @@ fi
 # Enable nullglob so unmatched patterns produce empty arrays.
 shopt -s nullglob
 
+
 # =====================================================================
-# 1. PAIRED-END DATA
+# 3. PAIRED-END DATA
 # =====================================================================
 
 if [[ "${READ_TYPE}" == "paired" ]]; then
@@ -43,8 +67,8 @@ if [[ "${READ_TYPE}" == "paired" ]]; then
     echo "Processing paired-end FASTQ files."
 
     # Identify forward and reverse reads.
-    R1_FILES=( "${RAW_DATA_DIR}"/*"${R1_SUFFIX}" )
-    R2_FILES=( "${RAW_DATA_DIR}"/*"${R2_SUFFIX}" )
+    R1_FILES=("${RAW_DATA_DIR}"/*"${R1_SUFFIX}")
+    R2_FILES=("${RAW_DATA_DIR}"/*"${R2_SUFFIX}")
 
     # Check that forward and reverse reads exist.
     if [[ ${#R1_FILES[@]} -eq 0 || ${#R2_FILES[@]} -eq 0 ]]; then
@@ -72,6 +96,8 @@ if [[ "${READ_TYPE}" == "paired" ]]; then
     done
 
     # Run FastQC on all paired-end FASTQ files.
+    echo "Running FastQC..."
+
     fastqc \
         --outdir "${QC_DIR}" \
         --threads "${THREADS}" \
@@ -80,7 +106,7 @@ if [[ "${READ_TYPE}" == "paired" ]]; then
 
 
 # =====================================================================
-# 2. SINGLE-END DATA
+# 4. SINGLE-END DATA
 # =====================================================================
 
 elif [[ "${READ_TYPE}" == "single" ]]; then
@@ -88,7 +114,7 @@ elif [[ "${READ_TYPE}" == "single" ]]; then
     echo "Processing single-end FASTQ files."
 
     # Identify FASTQ files.
-    FASTQ_FILES=( "${RAW_DATA_DIR}"/*.fastq.gz )
+    FASTQ_FILES=("${RAW_DATA_DIR}"/*.fastq.gz)
 
     # Check that FASTQ files exist.
     if [[ ${#FASTQ_FILES[@]} -eq 0 ]]; then
@@ -97,6 +123,8 @@ elif [[ "${READ_TYPE}" == "single" ]]; then
     fi
 
     # Run FastQC on all single-end FASTQ files.
+    echo "Running FastQC..."
+
     fastqc \
         --outdir "${QC_DIR}" \
         --threads "${THREADS}" \
@@ -109,12 +137,30 @@ else
 
 fi
 
+shopt -u nullglob
+
 
 # =====================================================================
-# 3. COMPLETION
+# 5. MULTIQC REPORT
+# =====================================================================
+
+echo "Generating MultiQC report..."
+
+# Summarise FastQC results.
+multiqc \
+    "${QC_DIR}" \
+    --outdir "${MULTIQC_DIR}" \
+    --force
+
+echo "MultiQC report generated."
+
+
+# =====================================================================
+# 6. COMPLETION
 # =====================================================================
 
 echo "============================================================"
-echo "FASTQC QUALITY ASSESSMENT COMPLETED"
-echo "Output directory: ${QC_DIR}"
+echo "FASTQ QUALITY ASSESSMENT COMPLETED"
+echo "FastQC output: ${QC_DIR}"
+echo "MultiQC report: ${MULTIQC_DIR}"
 echo "============================================================"

@@ -16,23 +16,19 @@ BAM_DIR="${ANALYSIS_DIR}/4_bamfiles"
 # Create BAM output directory.
 mkdir -p "${BAM_DIR}"
 
-# =====================================================================
-# 1. INPUT VALIDATION
-# =====================================================================
 
-# Check that the trimmed FASTQ directory exists.
-if [[ ! -d "${TRIMMED_DIR}" ]]; then
-    echo "ERROR: Trimmed FASTQ directory not found: ${TRIMMED_DIR}"
+# ---------------------------------------------------------------------
+# 1. ACTIVATE CONDA ENVIRONMENT
+# ---------------------------------------------------------------------
+
+# Activate Conda environment.
+if [[ ! -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+    echo "ERROR: Conda initialization script not found."
     exit 1
 fi
 
-# Check that the STAR genome index exists.
-if [[ ! -s "${STAR_INDEX_DIR}/Genome" ]]; then
-    echo "ERROR: STAR genome index not found or incomplete:"
-    echo "${STAR_INDEX_DIR}"
-    echo "Build the STAR index before running alignment."
-    exit 1
-fi
+source "$HOME/miniconda3/etc/profile.d/conda.sh"
+conda activate rnaseq
 
 # Check that STAR and SAMtools are installed.
 for TOOL in STAR samtools; do
@@ -42,12 +38,32 @@ for TOOL in STAR samtools; do
     fi
 done
 
+
+# ---------------------------------------------------------------------
+# 2. INPUT VALIDATION
+# ---------------------------------------------------------------------
+
+# Check that the trimmed FASTQ directory exists.
+if [[ ! -d "${TRIMMED_DIR}" ]]; then
+    echo "ERROR: Trimmed FASTQ directory not found: ${TRIMMED_DIR}"
+    exit 1
+fi
+
+# Check that the STAR genome index exists.
+if [[ ! -s "${STAR_INDEX_DIR}/Genome" ||
+      ! -s "${STAR_INDEX_DIR}/SA" ]]; then
+    echo "ERROR: STAR genome index not found or incomplete:"
+    echo "${STAR_INDEX_DIR}"
+    echo "Build the STAR index before running alignment."
+    exit 1
+fi
+
 # Enable nullglob to handle missing FASTQ patterns.
 shopt -s nullglob
 
 
 # =====================================================================
-# 2. PAIRED-END ALIGNMENT
+# 3. PAIRED-END ALIGNMENT
 # =====================================================================
 
 if [[ "${READ_TYPE}" == "paired" ]]; then
@@ -55,8 +71,8 @@ if [[ "${READ_TYPE}" == "paired" ]]; then
     echo "Starting paired-end STAR alignment."
 
     # Identify trimmed forward and reverse reads.
-    R1_FILES=( "${TRIMMED_DIR}"/*_val_1.fq.gz )
-    R2_FILES=( "${TRIMMED_DIR}"/*_val_2.fq.gz )
+    R1_FILES=("${TRIMMED_DIR}"/*_val_1.fq.gz)
+    R2_FILES=("${TRIMMED_DIR}"/*_val_2.fq.gz)
 
     # Check that both read sets exist.
     if [[ ${#R1_FILES[@]} -eq 0 || ${#R2_FILES[@]} -eq 0 ]]; then
@@ -86,30 +102,52 @@ if [[ "${READ_TYPE}" == "paired" ]]; then
         # Define STAR output prefix and BAM output.
         OUT_PREFIX="${BAM_DIR}/${SAMPLE_NAME}_"
         SORTED_BAM="${BAM_DIR}/${SAMPLE_NAME}_Aligned.sortedByCoord.out.bam"
+        BAM_INDEX="${SORTED_BAM}.bai"
+
+        # Define a unique STAR temporary directory outside OneDrive.
+        STAR_TMP_DIR="${TMPDIR:-/tmp}/${SAMPLE_NAME}_STARtmp_$$"
+
+        if [[ -e "${STAR_TMP_DIR}" ]]; then
+            echo "ERROR: STAR temporary directory already exists:"
+            echo "${STAR_TMP_DIR}"
+            exit 1
+        fi
 
         echo "Aligning paired-end sample: ${SAMPLE_NAME}"
 
         # Align paired-end reads and generate coordinate-sorted BAM.
         STAR \
-             --runThreadN "${THREADS}" \
-             --genomeDir "${STAR_INDEX_DIR}" \
-             --readFilesIn "${R1}" "${R2}" \
-             --readFilesCommand zcat \
-             --outSAMunmapped Within \
-             --outSAMtype BAM SortedByCoordinate \
-             --outTmpDir "/tmp/${SAMPLE_NAME}_STARtmp" \
-             --outFileNamePrefix "${OUT_PREFIX}"
+            --runThreadN "${THREADS}" \
+            --genomeDir "${STAR_INDEX_DIR}" \
+            --readFilesIn "${R1}" "${R2}" \
+            --readFilesCommand zcat \
+            --outSAMunmapped Within \
+            --outSAMtype BAM SortedByCoordinate \
+            --outTmpDir "${STAR_TMP_DIR}" \
+            --outFileNamePrefix "${OUT_PREFIX}"
 
         # Verify BAM generation.
         if [[ ! -s "${SORTED_BAM}" ]]; then
-            echo "ERROR: STAR did not produce a valid BAM for ${SAMPLE_NAME}"
+            echo "ERROR: STAR did not produce a BAM for ${SAMPLE_NAME}"
             exit 1
         fi
+
+        # Check BAM integrity.
+        samtools quickcheck -v "${SORTED_BAM}"
 
         # Index sorted BAM file.
         samtools index \
             --threads "${THREADS}" \
             "${SORTED_BAM}"
+
+        # Verify BAM index generation.
+        if [[ ! -s "${BAM_INDEX}" ]]; then
+            echo "ERROR: BAM index was not generated for ${SAMPLE_NAME}"
+            exit 1
+        fi
+
+        # Remove temporary STAR files after successful alignment.
+        rm -rf -- "${STAR_TMP_DIR}"
 
         echo "Completed alignment for sample: ${SAMPLE_NAME}"
 
@@ -117,7 +155,7 @@ if [[ "${READ_TYPE}" == "paired" ]]; then
 
 
 # =====================================================================
-# 3. SINGLE-END ALIGNMENT
+# 4. SINGLE-END ALIGNMENT
 # =====================================================================
 
 elif [[ "${READ_TYPE}" == "single" ]]; then
@@ -125,7 +163,7 @@ elif [[ "${READ_TYPE}" == "single" ]]; then
     echo "Starting single-end STAR alignment."
 
     # Identify trimmed single-end FASTQ files.
-    FASTQ_FILES=( "${TRIMMED_DIR}"/*_trimmed.fq.gz )
+    FASTQ_FILES=("${TRIMMED_DIR}"/*_trimmed.fq.gz)
 
     # Check that FASTQ files exist.
     if [[ ${#FASTQ_FILES[@]} -eq 0 ]]; then
@@ -142,6 +180,16 @@ elif [[ "${READ_TYPE}" == "single" ]]; then
         # Define STAR output prefix and BAM output.
         OUT_PREFIX="${BAM_DIR}/${SAMPLE_NAME}_"
         SORTED_BAM="${BAM_DIR}/${SAMPLE_NAME}_Aligned.sortedByCoord.out.bam"
+        BAM_INDEX="${SORTED_BAM}.bai"
+
+        # Define a unique STAR temporary directory outside OneDrive.
+        STAR_TMP_DIR="${TMPDIR:-/tmp}/${SAMPLE_NAME}_STARtmp_$$"
+
+        if [[ -e "${STAR_TMP_DIR}" ]]; then
+            echo "ERROR: STAR temporary directory already exists:"
+            echo "${STAR_TMP_DIR}"
+            exit 1
+        fi
 
         echo "Aligning single-end sample: ${SAMPLE_NAME}"
 
@@ -153,19 +201,31 @@ elif [[ "${READ_TYPE}" == "single" ]]; then
             --readFilesCommand zcat \
             --outSAMunmapped Within \
             --outSAMtype BAM SortedByCoordinate \
-            --outTmpDir "/tmp/${SAMPLE_NAME}_STARtmp" \
-            --outFileNamePrefix "${OUT_PREFIX}"       
+            --outTmpDir "${STAR_TMP_DIR}" \
+            --outFileNamePrefix "${OUT_PREFIX}"
 
         # Verify BAM generation.
         if [[ ! -s "${SORTED_BAM}" ]]; then
-            echo "ERROR: STAR did not produce a valid BAM for ${SAMPLE_NAME}"
+            echo "ERROR: STAR did not produce a BAM for ${SAMPLE_NAME}"
             exit 1
         fi
+
+        # Check BAM integrity.
+        samtools quickcheck -v "${SORTED_BAM}"
 
         # Index sorted BAM file.
         samtools index \
             --threads "${THREADS}" \
             "${SORTED_BAM}"
+
+        # Verify BAM index generation.
+        if [[ ! -s "${BAM_INDEX}" ]]; then
+            echo "ERROR: BAM index was not generated for ${SAMPLE_NAME}"
+            exit 1
+        fi
+
+        # Remove temporary STAR files after successful alignment.
+        rm -rf -- "${STAR_TMP_DIR}"
 
         echo "Completed alignment for sample: ${SAMPLE_NAME}"
 
@@ -178,12 +238,15 @@ else
 
 fi
 
+shopt -u nullglob
+
 
 # =====================================================================
-# 4. COMPLETION
+# 5. COMPLETION
 # =====================================================================
 
 echo "============================================================"
 echo "STAR ALIGNMENT COMPLETED SUCCESSFULLY"
 echo "BAM output directory: ${BAM_DIR}"
+echo "Read type: ${READ_TYPE}"
 echo "============================================================"

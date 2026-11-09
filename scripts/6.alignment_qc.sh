@@ -16,9 +16,32 @@ QC_DIR="${ANALYSIS_DIR}/5_alignmentQC"
 # Create output directory.
 mkdir -p "${QC_DIR}"
 
-# =====================================================================
-# 1. INPUT VALIDATION
-# =====================================================================
+
+# ---------------------------------------------------------------------
+# 1. ACTIVATE CONDA ENVIRONMENT
+# ---------------------------------------------------------------------
+
+# Activate Conda environment.
+if [[ ! -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+    echo "ERROR: Conda initialization script not found."
+    exit 1
+fi
+
+source "$HOME/miniconda3/etc/profile.d/conda.sh"
+conda activate rnaseq
+
+# Check that Qualimap and SAMtools are installed.
+for TOOL in qualimap samtools; do
+    if ! command -v "${TOOL}" > /dev/null 2>&1; then
+        echo "ERROR: ${TOOL} is not installed or unavailable."
+        exit 1
+    fi
+done
+
+
+# ---------------------------------------------------------------------
+# 2. INPUT VALIDATION
+# ---------------------------------------------------------------------
 
 # Check that the BAM directory exists.
 if [[ ! -d "${BAM_DIR}" ]]; then
@@ -32,23 +55,17 @@ if [[ ! -s "${ANNOTATION}" ]]; then
     exit 1
 fi
 
-# Activate Conda environment.
-source "$HOME/miniconda3/etc/profile.d/conda.sh"
-conda activate rnaseq
-
-# Check that Qualimap and SAMtools are installed.
-for TOOL in qualimap samtools; do
-    if ! command -v "${TOOL}" > /dev/null 2>&1; then
-        echo "ERROR: ${TOOL} is not installed or unavailable."
-        exit 1
-    fi
-done
+# Validate sequencing layout.
+if [[ "${READ_TYPE}" != "paired" && "${READ_TYPE}" != "single" ]]; then
+    echo "ERROR: Unsupported READ_TYPE: ${READ_TYPE}"
+    exit 1
+fi
 
 # Enable nullglob to handle missing BAM patterns.
 shopt -s nullglob
 
-# Identify sorted BAM files.
-BAM_FILES=( "${BAM_DIR}"/*_Aligned.sortedByCoord.out.bam )
+# Identify STAR coordinate-sorted BAM files.
+BAM_FILES=("${BAM_DIR}"/*_Aligned.sortedByCoord.out.bam)
 
 # Check that BAM files exist.
 if [[ ${#BAM_FILES[@]} -eq 0 ]]; then
@@ -56,10 +73,12 @@ if [[ ${#BAM_FILES[@]} -eq 0 ]]; then
     exit 1
 fi
 
+echo "BAM files detected: ${#BAM_FILES[@]}"
 
-# =====================================================================
-# 2. ALIGNMENT QUALITY ASSESSMENT
-# =====================================================================
+
+# ---------------------------------------------------------------------
+# 3. ALIGNMENT QUALITY ASSESSMENT
+# ---------------------------------------------------------------------
 
 for BAM_FILE in "${BAM_FILES[@]}"; do
 
@@ -97,8 +116,6 @@ for BAM_FILE in "${BAM_FILES[@]}"; do
         -outdir "${SAMPLE_QC_DIR}"
         -outfile "${BAM_NAME}"
         -outformat HTML
-        -nt "${THREADS}"
-        -sorted
     )
 
     # Specify paired-end sequencing when applicable.
@@ -113,12 +130,15 @@ for BAM_FILE in "${BAM_FILES[@]}"; do
 
 done
 
+shopt -u nullglob
 
-# =====================================================================
-# 3. COMPLETION
-# =====================================================================
+
+# ---------------------------------------------------------------------
+# 4. COMPLETION
+# ---------------------------------------------------------------------
 
 echo "============================================================"
 echo "ALIGNMENT QUALITY ASSESSMENT COMPLETED"
+echo "Samples assessed: ${#BAM_FILES[@]}"
 echo "Qualimap reports: ${QC_DIR}"
 echo "============================================================"

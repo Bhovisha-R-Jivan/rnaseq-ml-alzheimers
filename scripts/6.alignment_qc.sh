@@ -12,9 +12,11 @@ source scripts/0.config.sh
 # Define input and output directories.
 BAM_DIR="${ANALYSIS_DIR}/4_bamfiles"
 QC_DIR="${ANALYSIS_DIR}/5_alignmentQC"
+MULTIQC_DIR="${QC_DIR}/multiqc_report"
 
-# Create output directory.
+# Create output directories.
 mkdir -p "${QC_DIR}"
+mkdir -p "${MULTIQC_DIR}"
 
 
 # ---------------------------------------------------------------------
@@ -30,8 +32,8 @@ fi
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate rnaseq
 
-# Check that Qualimap and SAMtools are installed.
-for TOOL in qualimap samtools; do
+# Check that Qualimap, SAMtools, and MultiQC are installed.
+for TOOL in qualimap samtools multiqc; do
     if ! command -v "${TOOL}" > /dev/null 2>&1; then
         echo "ERROR: ${TOOL} is not installed or unavailable."
         exit 1
@@ -130,15 +132,31 @@ for BAM_FILE in "${BAM_FILES[@]}"; do
 
 done
 
+
+# ---------------------------------------------------------------------
+# 4. MULTIQC REPORT
+# ---------------------------------------------------------------------
+
 shopt -u nullglob
+
+echo "Generating MultiQC report for alignment QC..."
+
+multiqc \
+    "${QC_DIR}" \
+    --outdir "${MULTIQC_DIR}" \
+    --filename "multiqc_alignment_qc.html" \
+    --force
+
+echo "MultiQC report generated: ${MULTIQC_DIR}"
 
 
 # ---------------------------------------------------------------------
-# 4. COMPLETION
+# 5. COMPLETION
 # ---------------------------------------------------------------------
 
 echo "============================================================"
 echo "ALIGNMENT QUALITY ASSESSMENT COMPLETED"
 echo "Samples assessed: ${#BAM_FILES[@]}"
 echo "Qualimap reports: ${QC_DIR}"
+echo "MultiQC report: ${MULTIQC_DIR}"
 echo "============================================================"

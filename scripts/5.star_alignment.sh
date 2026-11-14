@@ -12,6 +12,7 @@ source scripts/0.config.sh
 # Define input and output directories.
 TRIMMED_DIR="${ANALYSIS_DIR}/2_trimmed"
 BAM_DIR="${ANALYSIS_DIR}/4_bamfiles"
+MULTIQC_DIR="${BAM_DIR}/multiqc_report"
 
 # Create BAM output directory.
 mkdir -p "${BAM_DIR}"
@@ -30,8 +31,8 @@ fi
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate rnaseq
 
-# Check that STAR and SAMtools are installed.
-for TOOL in STAR samtools; do
+# Check that STAR, SAMtools, and MultiQC are installed.
+for TOOL in STAR samtools multiqc; do
     if ! command -v "${TOOL}" > /dev/null 2>&1; then
         echo "ERROR: ${TOOL} is not installed or unavailable."
         exit 1
@@ -238,15 +239,39 @@ else
 
 fi
 
+
+# =====================================================================
+# 5. MULTIQC REPORT
+# =====================================================================
+
+# Identify STAR alignment summary logs.
+STAR_LOGS=("${BAM_DIR}"/*_Log.final.out)
+
+if [[ ${#STAR_LOGS[@]} -eq 0 ]]; then
+    echo "ERROR: No STAR Log.final.out files found in ${BAM_DIR}"
+    exit 1
+fi
+
+echo "Generating MultiQC report for STAR alignment..."
+
+multiqc \
+    "${STAR_LOGS[@]}" \
+    --outdir "${MULTIQC_DIR}" \
+    --filename "multiqc_star_alignment.html" \
+    --force
+
+echo "MultiQC report generated: ${MULTIQC_DIR}"
+
+
+# =====================================================================
+# 6. COMPLETION
+# =====================================================================
+
 shopt -u nullglob
-
-
-# =====================================================================
-# 5. COMPLETION
-# =====================================================================
 
 echo "============================================================"
 echo "STAR ALIGNMENT COMPLETED SUCCESSFULLY"
 echo "BAM output directory: ${BAM_DIR}"
+echo "MultiQC report: ${MULTIQC_DIR}"
 echo "Read type: ${READ_TYPE}"
 echo "============================================================"

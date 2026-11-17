@@ -70,10 +70,8 @@ R2_SUFFIX="${R2_SUFFIX:-_2.fastq.gz}"
 # resource_folder/genome.fa
 # resource_folder/annotation.gtf
 
-GENOME="${GRCh38_chrX_primary_assembly:-${REFERENCE_DIR}/genome.fa}"
-ANNOTATION="${GRCh38_chrX_gencode.v47:-${REFERENCE_DIR}/annotation.gtf}"
-
-
+GENOME="${REFERENCE_DIR}/GRCh38_chrX_primary_assembly.genome.fa"
+ANNOTATION="${REFERENCE_DIR}/GRCh38_chrX_gencode.v47.annotation.gtf"
 
 # ===========================================================================================================================================================================
 # 5. COMPUTATIONAL RESOURCES

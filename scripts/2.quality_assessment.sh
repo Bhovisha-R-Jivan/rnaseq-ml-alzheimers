@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Load pipeline configuration.
-source scripts/0.config.sh
+source scripts/1.config.sh
 
 # Define FastQC and MultiQC output directories.
 QC_DIR="${ANALYSIS_DIR}/1_fastqc"

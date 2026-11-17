@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Load pipeline configuration.
-source scripts/0.config.sh
+source scripts/1.config.sh
 
 # Define input and output directories.
 TRIMMED_DIR="${ANALYSIS_DIR}/2_trimmed"

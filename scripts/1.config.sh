@@ -19,7 +19,7 @@
 PROJECT_DIR="${PROJECT_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/rnaseq-ml-alzheimers}"
 
 # Input FASTQ directory containing the sequencing data.
-RAW_DATA_DIR="${RAW_DATA_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/rnaseq-ml-alzheimers/raw_data}"
+RAW_DATA_DIR="${RAW_DATA_DIR:-/mnt/c/Users/Bhovisha/OneDrive/Desktop/Test_data/raw_data}"
 
 # Main project directories.
 REFERENCE_DIR="${PROJECT_DIR}/resource_folder"

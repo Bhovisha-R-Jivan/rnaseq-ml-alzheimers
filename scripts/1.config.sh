@@ -71,7 +71,7 @@ R2_SUFFIX="${R2_SUFFIX:-_2.fastq.gz}"
 # resource_folder/annotation.gtf
 
 GENOME="${GRCh38_chrX_primary_assembly:-${REFERENCE_DIR}/genome.fa}"
-ANNOTATION="${GRCh38_chrX_primary_assembly:-${REFERENCE_DIR}/annotation.gtf}"
+ANNOTATION="${GRCh38_chrX_gencode.v47:-${REFERENCE_DIR}/annotation.gtf}"
 
 
 
